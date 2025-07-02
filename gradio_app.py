@@ -2,7 +2,7 @@
 
 import os
 import gradio as gr
-from mass_tagger import tag_images, tag_single_image
+from mass_tagger import tag_images, _load_model
 
 
 def run(
@@ -25,14 +25,31 @@ def run(
     )
 
 
-def run_single(image_path, model_folder, tags_csv, threshold):
-    tags = tag_single_image(
-        image_path,
+def run_single(upload, model_folder, tags_csv, threshold):
+    """Tag a single uploaded image and return the tags."""
+    if upload is None:
+        return ""
+
+    image_path = upload if isinstance(upload, str) else upload.name
+    tag_images(
+        targets_path=image_path,
+        recursive=False,
+        dry_run=False,
         model_folder=model_folder,
         tags_csv=tags_csv,
         threshold=threshold,
+        batch_size=1,
     )
-    if image_path and os.path.exists(image_path):
+
+    tags_file = os.path.splitext(image_path)[0] + ".txt"
+    if os.path.isfile(tags_file):
+        with open(tags_file) as f:
+            tags = f.read()
+        os.remove(tags_file)
+    else:
+        tags = ""
+
+    if os.path.exists(image_path):
         os.remove(image_path)
     return tags
 
@@ -53,6 +70,10 @@ def main():
         "SmilingWolf/wd-v1-4-vit-tagger",
     ]
 
+    # Preload the default model so the first request is responsive
+    default_model = "SmilingWolf/wd-v1-4-moat-tagger-v2"
+    _load_model(default_model)
+
     with gr.Blocks() as demo:
         gr.Markdown("# WD Mass Tagger")
         with gr.Tabs():
@@ -63,7 +84,7 @@ def main():
                 model_folder = gr.Dropdown(
                     label="Model Folder or HuggingFace repo",
                     choices=models,
-                    value="SmilingWolf/wd-v1-4-moat-tagger-v2",
+                    value=default_model,
                 )
                 tags_csv = gr.Textbox(label="Tags CSV", value="selected_tags.csv")
                 threshold = gr.Slider(minimum=0.0, maximum=1.0, value=0.35, label="Threshold")
@@ -81,7 +102,7 @@ def main():
                 model_folder_s = gr.Dropdown(
                     label="Model Folder or HuggingFace repo",
                     choices=models,
-                    value="SmilingWolf/wd-v1-4-moat-tagger-v2",
+                    value=default_model,
                 )
                 tags_csv_s = gr.Textbox(label="Tags CSV", value="selected_tags.csv")
                 threshold_s = gr.Slider(minimum=0.0, maximum=1.0, value=0.35, label="Threshold")

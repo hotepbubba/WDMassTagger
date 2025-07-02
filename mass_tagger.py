@@ -38,6 +38,42 @@ os.environ["TF_XLA_FLAGS"] = "--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit"
 import tensorflow as tf
 from huggingface_hub import snapshot_download
 
+_model_cache = {}
+_model_paths = {}
+_tags_cache = {}
+
+
+def _load_model(model_folder):
+    """Load and cache a TensorFlow model."""
+    cached = _model_cache.get(model_folder)
+    if cached is not None:
+        return cached
+
+    path = model_folder
+    if not Path(model_folder).exists():
+        print(f"Downloading model '{model_folder}' from Hugging Face...")
+        path = snapshot_download(repo_id=model_folder)
+
+    model = tf.keras.models.load_model(path)
+    _, height, width, _ = model.inputs[0].shape
+    cached = (model, int(height), int(width), path)
+    _model_cache[model_folder] = cached
+    _model_paths[model_folder] = path
+    return cached
+
+
+def _load_tags(labels_file):
+    """Load and cache tags dataframe."""
+    if labels_file in _tags_cache:
+        return _tags_cache[labels_file]
+
+    df = pd.read_csv(labels_file)
+    df["sanitized_name"] = df["name"].map(
+        lambda x: x.replace("_", " ") if x not in KAOMOJIS else x
+    )
+    _tags_cache[labels_file] = df
+    return df
+
 from Generator.TFDataReader import DataGenerator
 
 # Stop TF from hogging all of the VRAM
@@ -96,13 +132,11 @@ def tag_images(
 
     targets_path = Path(targets_path)
 
-    if not Path(model_folder).exists():
-        print(f"Downloading model '{model_folder}' from Hugging Face...")
-        model_folder = snapshot_download(repo_id=model_folder)
+    model, height, width, model_path = _load_model(model_folder)
 
     labels_file = tags_csv
     if not Path(labels_file).is_file():
-        candidate = Path(model_folder) / labels_file
+        candidate = Path(model_path) / labels_file
         if candidate.is_file():
             labels_file = str(candidate)
 
@@ -123,19 +157,12 @@ def tag_images(
 
     # https://github.com/toriato/stable-diffusion-webui-wd14-tagger/blob/a9eacb1eff904552d3012babfa28b57e1d3e295c/tagger/ui.py#L368
 
-    tags_df = pd.read_csv(labels_file)
-    tags_df["sanitized_name"] = tags_df["name"].map(
-        lambda x: x.replace("_", " ") if x not in KAOMOJIS else x
-    )
+    tags_df = _load_tags(labels_file)
 
     use_gpu = tf.config.list_physical_devices("GPU") and gpu_id is not None
     device_name = f"/GPU:{gpu_id}" if use_gpu else "/CPU:0"
 
     if not dry_run:
-        with tf.device(device_name):
-            model = tf.keras.models.load_model(model_folder)
-            _, height, width, _ = model.inputs[0].shape
-
         process_func = lambda paths, imgs: process_images(
             paths, imgs, model, tags_df, threshold, device_name
         )
@@ -171,27 +198,21 @@ def tag_single_image(
 
     image_path = Path(image_path)
 
-    if not Path(model_folder).exists():
-        print(f"Downloading model '{model_folder}' from Hugging Face...")
-        model_folder = snapshot_download(repo_id=model_folder)
+    model, height, width, model_path = _load_model(model_folder)
 
     labels_file = tags_csv
     if not Path(labels_file).is_file():
-        candidate = Path(model_folder) / labels_file
+        candidate = Path(model_path) / labels_file
         if candidate.is_file():
             labels_file = str(candidate)
 
-    tags_df = pd.read_csv(labels_file)
-    tags_df["sanitized_name"] = tags_df["name"].map(
-        lambda x: x.replace("_", " ") if x not in KAOMOJIS else x
-    )
+    tags_df = _load_tags(labels_file)
 
     use_gpu = tf.config.list_physical_devices("GPU") and gpu_id is not None
     device_name = f"/GPU:{gpu_id}" if use_gpu else "/CPU:0"
 
     with tf.device(device_name):
-        model = tf.keras.models.load_model(model_folder)
-        _, height, width, _ = model.inputs[0].shape
+        pass  # model already loaded
 
     generator = DataGenerator(
         file_list=[str(image_path.resolve())],
