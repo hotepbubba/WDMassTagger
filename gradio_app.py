@@ -60,7 +60,7 @@ def run_single(upload, model_folder, tags_csv, threshold):
     return tags
 
 
-
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--share",
@@ -74,17 +74,6 @@ def run_single(upload, model_folder, tags_csv, threshold):
         share = share_env.lower() in ("1", "true", "yes")
     else:
         share = args.share
-
-    parser = argparse.ArgumentParser(description="Launch the WD Mass Tagger UI")
-    parser.add_argument(
-        "--share",
-        action="store_true",
-        help="Create a public Gradio link (can also set SHARE=1)",
-    )
-    args = parser.parse_args()
-
-    share_flag = args.share or os.getenv("SHARE", "").lower() in ["1", "true", "yes"]
-
 
     models = [
         "SmilingWolf/wd-eva02-large-tagger-v3",
@@ -160,11 +149,7 @@ def run_single(upload, model_folder, tags_csv, threshold):
                 )
 
     demo.queue()
-
     demo.launch(share=share)
-
-    demo.launch(share=share_flag)
-
 
 
 if __name__ == "__main__":
