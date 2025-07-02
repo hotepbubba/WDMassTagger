@@ -34,7 +34,7 @@ The script writes a `.txt` file next to each image containing the predicted tags
 Launch the Gradio web UI with:
 
 ```bash
-python3 gradio_app.py
+python3 gradio_app.py [--share]
 ```
 
-This starts a local server where you can configure the options interactively and run the tagger through a browser interface.
+Use the optional `--share` flag (or set the `SHARE=1` environment variable) to create a public link. This starts a local server where you can configure the options interactively and run the tagger through a browser interface.

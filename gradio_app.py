@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import argparse
 import gradio as gr
 from mass_tagger import tag_images, _load_model
 
@@ -59,6 +60,16 @@ def run_single(upload, model_folder, tags_csv, threshold):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Launch the WD Mass Tagger UI")
+    parser.add_argument(
+        "--share",
+        action="store_true",
+        help="Create a public Gradio link (can also set SHARE=1)",
+    )
+    args = parser.parse_args()
+
+    share_flag = args.share or os.getenv("SHARE", "").lower() in ["1", "true", "yes"]
+
     models = [
         "SmilingWolf/wd-eva02-large-tagger-v3",
         "SmilingWolf/wd-vit-large-tagger-v3",
@@ -132,7 +143,7 @@ def main():
                     show_progress="full",
                 )
     demo.queue()
-    demo.launch(share=True)
+    demo.launch(share=share_flag)
 
 
 if __name__ == "__main__":
