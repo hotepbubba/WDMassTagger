@@ -2,6 +2,28 @@ import argparse
 import os
 from pathlib import Path
 
+KAOMOJIS = [
+    "0_0",
+    "(o)_(o)",
+    "+_+",
+    "+_-",
+    "._.",
+    "<o>_<o>",
+    "<|>_<|>",
+    "=_=",
+    ">_<",
+    "3_3",
+    "6_9",
+    ">_o",
+    "@_@",
+    "^_^",
+    "o_o",
+    "u_u",
+    "x_x",
+    "|_|",
+    "||_||",
+]
+
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -100,31 +122,10 @@ def tag_images(
         ]
 
     # https://github.com/toriato/stable-diffusion-webui-wd14-tagger/blob/a9eacb1eff904552d3012babfa28b57e1d3e295c/tagger/ui.py#L368
-    kaomojis = [
-        "0_0",
-        "(o)_(o)",
-        "+_+",
-        "+_-",
-        "._.",
-        "<o>_<o>",
-        "<|>_<|>",
-        "=_=",
-        ">_<",
-        "3_3",
-        "6_9",
-        ">_o",
-        "@_@",
-        "^_^",
-        "o_o",
-        "u_u",
-        "x_x",
-        "|_|",
-        "||_||",
-    ]
 
     tags_df = pd.read_csv(labels_file)
     tags_df["sanitized_name"] = tags_df["name"].map(
-        lambda x: x.replace("_", " ") if x not in kaomojis else x
+        lambda x: x.replace("_", " ") if x not in KAOMOJIS else x
     )
 
     use_gpu = tf.config.list_physical_devices("GPU") and gpu_id is not None
@@ -157,6 +158,57 @@ def tag_images(
         process_func(filepaths, images)
 
     return f"Processed {len(images_list)} images"
+
+
+def tag_single_image(
+    image_path,
+    model_folder="networks/wd-v1-4-moat-tagger-v2",
+    tags_csv="selected_tags.csv",
+    threshold=0.35,
+    gpu_id=0,
+):
+    """Return predicted tags for a single image."""
+
+    image_path = Path(image_path)
+
+    if not Path(model_folder).exists():
+        print(f"Downloading model '{model_folder}' from Hugging Face...")
+        model_folder = snapshot_download(repo_id=model_folder)
+
+    labels_file = tags_csv
+    if not Path(labels_file).is_file():
+        candidate = Path(model_folder) / labels_file
+        if candidate.is_file():
+            labels_file = str(candidate)
+
+    tags_df = pd.read_csv(labels_file)
+    tags_df["sanitized_name"] = tags_df["name"].map(
+        lambda x: x.replace("_", " ") if x not in KAOMOJIS else x
+    )
+
+    use_gpu = tf.config.list_physical_devices("GPU") and gpu_id is not None
+    device_name = f"/GPU:{gpu_id}" if use_gpu else "/CPU:0"
+
+    with tf.device(device_name):
+        model = tf.keras.models.load_model(model_folder)
+        _, height, width, _ = model.inputs[0].shape
+
+    generator = DataGenerator(
+        file_list=[str(image_path.resolve())],
+        target_size=height,
+        batch_size=1,
+    ).genDS()
+
+    for filepaths, images in generator:
+        with tf.device(device_name):
+            pred = model(images, training=False).numpy()[0]
+
+    tags_df["preds"] = pred
+    general_tags = tags_df[tags_df["category"] == 0]
+    chosen_tags = general_tags[general_tags["preds"] > threshold]
+    chosen_tags = chosen_tags.sort_values(by="preds", ascending=False)
+    tags_names = chosen_tags["sanitized_name"]
+    return ", ".join(tags_names)
 
 
 parser = argparse.ArgumentParser(description="Mass tag a set of images")
