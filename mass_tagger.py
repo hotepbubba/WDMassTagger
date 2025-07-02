@@ -28,12 +28,13 @@ if gpus:
         print(e)
 
 
-def process_images(filepaths, images, model, tags_df, threshold):
+def process_images(filepaths, images, model, tags_df, threshold, device="/CPU:0"):
     @tf.function
     def pred_model(x):
         return model(x, training=False)
 
-    preds = pred_model(images).numpy()
+    with tf.device(device):
+        preds = pred_model(images).numpy()
 
     for image_path, pred in zip(filepaths, preds):
         image_path = image_path.numpy().decode("utf-8")
@@ -65,6 +66,7 @@ def tag_images(
     tags_csv="selected_tags.csv",
     threshold=0.35,
     batch_size=32,
+    gpu_id=0,
 ):
     """Tag all images in a directory using a WD14 tagger model."""
 
@@ -125,10 +127,17 @@ def tag_images(
         lambda x: x.replace("_", " ") if x not in kaomojis else x
     )
 
+    use_gpu = tf.config.list_physical_devices("GPU") and gpu_id is not None
+    device_name = f"/GPU:{gpu_id}" if use_gpu else "/CPU:0"
+
     if not dry_run:
-        model = tf.keras.models.load_model(model_folder)
-        _, height, width, _ = model.inputs[0].shape
-        process_func = lambda paths, imgs: process_images(paths, imgs, model, tags_df, threshold)
+        with tf.device(device_name):
+            model = tf.keras.models.load_model(model_folder)
+            _, height, width, _ = model.inputs[0].shape
+
+        process_func = lambda paths, imgs: process_images(
+            paths, imgs, model, tags_df, threshold, device_name
+        )
     else:
         height, width = 224, 224
         process_func = dataset_diagnostic
@@ -186,6 +195,12 @@ parser.add_argument(
     type=int,
     help="Batch size",
 )
+parser.add_argument(
+    "--gpu-id",
+    default=0,
+    type=int,
+    help="GPU index to use for TensorFlow operations",
+)
 
 def main():
     args = parser.parse_args()
@@ -197,6 +212,7 @@ def main():
         tags_csv=args.tags_csv,
         threshold=args.threshold,
         batch_size=args.batch_size,
+        gpu_id=args.gpu_id,
     )
 
 
