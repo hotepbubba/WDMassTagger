@@ -34,9 +34,11 @@ The script writes a `.txt` file next to each image containing the predicted tags
 Launch the Gradio web UI with:
 
 ```bash
-python3 gradio_app.py
+python3 gradio_app.py [--share]
 ```
 
 This starts a local server where you can configure the options interactively and run the tagger through a browser interface.
+
+Passing `--share` or setting the environment variable `GRADIO_SHARE=1` will share the interface publicly via Gradio.
 
 In the *Batch Tag* tab, use the **Images** file uploader to select the pictures you want to tag. The selected files are processed on the server and the resulting tags are written next to each uploaded image.

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import argparse
 import gradio as gr
 from mass_tagger import tag_images, _load_model
 
@@ -60,6 +61,20 @@ def run_single(upload, model_folder, tags_csv, threshold):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--share",
+        action="store_true",
+        help="Share the Gradio interface publicly",
+    )
+    args = parser.parse_args()
+
+    share_env = os.getenv("GRADIO_SHARE")
+    if share_env is not None:
+        share = share_env.lower() in ("1", "true", "yes")
+    else:
+        share = args.share
+
     models = [
         "SmilingWolf/wd-eva02-large-tagger-v3",
         "SmilingWolf/wd-vit-large-tagger-v3",
@@ -134,7 +149,7 @@ def main():
                 )
 
     demo.queue()
-    demo.launch(share=True)
+    demo.launch(share=share)
 
 
 if __name__ == "__main__":
