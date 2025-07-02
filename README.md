@@ -41,7 +41,6 @@ python3 gradio_app.py [--share]
 
 Use the optional `--share` flag (or set the `SHARE=1` environment variable) to create a public link. This starts a local server where you can configure the options interactively and run the tagger through a browser interface.
 
-This starts a local server where you can configure the options interactively and run the tagger through a browser interface.
 
 Passing `--share` or setting the environment variable `GRADIO_SHARE=1` will share the interface publicly via Gradio.
 
