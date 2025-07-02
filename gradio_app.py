@@ -6,7 +6,7 @@ from mass_tagger import tag_images, _load_model
 
 
 def run(
-    targets_path,
+    files,
     recursive,
     dry_run,
     model_folder,
@@ -14,9 +14,19 @@ def run(
     threshold,
     batch_size,
 ):
+    file_paths = []
+    if isinstance(files, list):
+        for f in files:
+            file_paths.append(f if isinstance(f, str) else f.name)
+    elif files is not None:
+        file_paths.append(files if isinstance(files, str) else files.name)
+
+    if not file_paths:
+        return "No files provided"
+
     return tag_images(
-        targets_path=targets_path,
-        recursive=recursive,
+        targets_path=file_paths,
+        recursive=False,
         dry_run=dry_run,
         model_folder=model_folder,
         tags_csv=tags_csv,
@@ -78,7 +88,7 @@ def main():
         gr.Markdown("# WD Mass Tagger")
         with gr.Tabs():
             with gr.TabItem("Batch Tag"):
-                targets = gr.Textbox(label="Targets Path")
+                targets = gr.Files(label="Images")
                 recursive = gr.Checkbox(label="Recursive")
                 dry_run = gr.Checkbox(label="Dry Run")
                 model_folder = gr.Dropdown(

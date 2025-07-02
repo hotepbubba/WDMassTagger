@@ -126,11 +126,32 @@ def tag_images(
     batch_size=32,
     gpu_id=0,
 ):
-    """Tag all images in a directory using a WD14 tagger model."""
+    """Tag images from a path or list using a WD14 tagger model."""
 
     glob_pattern = "**/*" if recursive else "*"
 
-    targets_path = Path(targets_path)
+    image_extensions = [".jpeg", ".jpg", ".png", ".webp"]
+
+    if isinstance(targets_path, (list, tuple)):
+        images_list = [
+            str(Path(p).resolve())
+            for p in targets_path
+            if Path(p).suffix.lower() in image_extensions
+        ]
+    else:
+        targets_path = Path(targets_path)
+        if targets_path.is_file():
+            images_list = (
+                [str(targets_path.resolve())]
+                if targets_path.suffix.lower() in image_extensions
+                else []
+            )
+        else:
+            images_list = [
+                str(p.resolve())
+                for p in targets_path.glob(glob_pattern)
+                if p.suffix.lower() in image_extensions
+            ]
 
     model, height, width, model_path = _load_model(model_folder)
 
@@ -139,21 +160,6 @@ def tag_images(
         candidate = Path(model_path) / labels_file
         if candidate.is_file():
             labels_file = str(candidate)
-
-    image_extensions = [".jpeg", ".jpg", ".png", ".webp"]
-
-    if targets_path.is_file():
-        images_list = (
-            [str(targets_path.resolve())]
-            if targets_path.suffix.lower() in image_extensions
-            else []
-        )
-    else:
-        images_list = [
-            str(p.resolve())
-            for p in targets_path.glob(glob_pattern)
-            if p.suffix.lower() in image_extensions
-        ]
 
     # https://github.com/toriato/stable-diffusion-webui-wd14-tagger/blob/a9eacb1eff904552d3012babfa28b57e1d3e295c/tagger/ui.py#L368
 
