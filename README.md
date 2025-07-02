@@ -42,5 +42,7 @@ Use the optional `--share` flag (or set the `SHARE=1` environment variable) to c
 
 This starts a local server where you can configure the options interactively and run the tagger through a browser interface.
 
+Passing `--share` or setting the environment variable `GRADIO_SHARE=1` will share the interface publicly via Gradio.
+
 In the *Batch Tag* tab, use the **Images** file uploader to select the pictures you want to tag. The selected files are processed on the server and the resulting tags are written next to each uploaded image.
 

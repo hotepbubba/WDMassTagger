@@ -60,7 +60,21 @@ def run_single(upload, model_folder, tags_csv, threshold):
     return tags
 
 
-def main():
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--share",
+        action="store_true",
+        help="Share the Gradio interface publicly",
+    )
+    args = parser.parse_args()
+
+    share_env = os.getenv("GRADIO_SHARE")
+    if share_env is not None:
+        share = share_env.lower() in ("1", "true", "yes")
+    else:
+        share = args.share
+
     parser = argparse.ArgumentParser(description="Launch the WD Mass Tagger UI")
     parser.add_argument(
         "--share",
@@ -70,6 +84,7 @@ def main():
     args = parser.parse_args()
 
     share_flag = args.share or os.getenv("SHARE", "").lower() in ["1", "true", "yes"]
+
 
     models = [
         "SmilingWolf/wd-eva02-large-tagger-v3",
@@ -145,7 +160,11 @@ def main():
                 )
 
     demo.queue()
+
+    demo.launch(share=share)
+
     demo.launch(share=share_flag)
+
 
 
 if __name__ == "__main__":
