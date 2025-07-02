@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=WD Mass Tagger
+Exec=launch.sh
+Icon=assets/icon.png
+Terminal=false

@@ -57,3 +57,9 @@ Use the helper script to start the Gradio interface from the virtual environment
 
 Any arguments passed to `launch.sh` are forwarded to `gradio_app.py`.
 
+## Desktop Shortcut
+
+Copy the provided `wdmass-tagger.desktop` file to `~/.local/share/applications` so that WD Mass Tagger appears in your application menu.
+
+Place your own icon at `assets/icon.png` if you want the shortcut to display one.
+
