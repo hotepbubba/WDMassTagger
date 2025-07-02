@@ -125,6 +125,7 @@ def tag_images(
     threshold=0.35,
     batch_size=32,
     gpu_id=0,
+    progress_tqdm=tqdm,
 ):
     """Tag images from a path or list using a WD14 tagger model."""
 
@@ -187,7 +188,7 @@ def tag_images(
         file_list=images_list, target_size=height, batch_size=batch_size
     ).genDS()
 
-    for filepaths, images in tqdm(generator):
+    for filepaths, images in progress_tqdm(generator):
         process_func(filepaths, images)
 
     return f"Processed {len(images_list)} images"

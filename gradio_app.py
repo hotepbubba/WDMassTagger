@@ -5,15 +5,7 @@ import gradio as gr
 from mass_tagger import tag_images, _load_model
 
 
-def run(
-    files,
-    recursive,
-    dry_run,
-    model_folder,
-    tags_csv,
-    threshold,
-    batch_size,
-):
+def run(files, recursive, dry_run, model_folder, tags_csv, threshold, batch_size):
     file_paths = []
     if isinstance(files, list):
         for f in files:
@@ -24,15 +16,17 @@ def run(
     if not file_paths:
         return "No files provided"
 
-    return tag_images(
-        targets_path=file_paths,
-        recursive=False,
-        dry_run=dry_run,
-        model_folder=model_folder,
-        tags_csv=tags_csv,
-        threshold=threshold,
-        batch_size=batch_size,
-    )
+    with gr.Progress(track_tqdm=True) as progress:
+        return tag_images(
+            targets_path=file_paths,
+            recursive=recursive,
+            dry_run=dry_run,
+            model_folder=model_folder,
+            tags_csv=tags_csv,
+            threshold=threshold,
+            batch_size=batch_size,
+            progress_tqdm=progress.tqdm,
+        )
 
 
 def run_single(upload, model_folder, tags_csv, threshold):
@@ -41,23 +35,24 @@ def run_single(upload, model_folder, tags_csv, threshold):
         return ""
 
     image_path = upload if isinstance(upload, str) else upload.name
-    tag_images(
-        targets_path=image_path,
-        recursive=False,
-        dry_run=False,
-        model_folder=model_folder,
-        tags_csv=tags_csv,
-        threshold=threshold,
-        batch_size=1,
-    )
+    with gr.Progress(track_tqdm=True) as progress:
+        tag_images(
+            targets_path=image_path,
+            recursive=False,
+            dry_run=False,
+            model_folder=model_folder,
+            tags_csv=tags_csv,
+            threshold=threshold,
+            batch_size=1,
+            progress_tqdm=progress.tqdm,
+        )
 
     tags_file = os.path.splitext(image_path)[0] + ".txt"
+    tags = ""
     if os.path.isfile(tags_file):
         with open(tags_file) as f:
             tags = f.read()
         os.remove(tags_file)
-    else:
-        tags = ""
 
     if os.path.exists(image_path):
         os.remove(image_path)
@@ -80,12 +75,12 @@ def main():
         "SmilingWolf/wd-v1-4-vit-tagger",
     ]
 
-    # Preload the default model so the first request is responsive
     default_model = "SmilingWolf/wd-v1-4-moat-tagger-v2"
     _load_model(default_model)
 
     with gr.Blocks() as demo:
         gr.Markdown("# WD Mass Tagger")
+
         with gr.Tabs():
             with gr.TabItem("Batch Tag"):
                 targets = gr.Files(label="Images")
@@ -115,6 +110,7 @@ def main():
                         batch_size,
                     ],
                     out,
+                    show_progress="full",
                 )
 
             with gr.TabItem("Single Image"):
@@ -134,7 +130,10 @@ def main():
                     run_single,
                     [image, model_folder_s, tags_csv_s, threshold_s],
                     out_s,
+                    show_progress="full",
                 )
+
+    demo.queue()
     demo.launch(share=True)
 
 
