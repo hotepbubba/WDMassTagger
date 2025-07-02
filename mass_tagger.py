@@ -14,6 +14,7 @@ os.environ["TF_XLA_FLAGS"] = "--tf_xla_auto_jit=2 --tf_xla_cpu_global_jit"
 # os.environ["TF_CPP_MIN_LOG_LEVEL"] = "1"
 
 import tensorflow as tf
+from huggingface_hub import snapshot_download
 
 from Generator.TFDataReader import DataGenerator
 
@@ -100,7 +101,14 @@ glob_pattern = "**/*" if args.recursive else "*"
 dry_run = args.dry_run
 
 model_folder = args.model_folder
+if not Path(model_folder).exists():
+    print(f"Downloading model '{model_folder}' from Hugging Face...")
+    model_folder = snapshot_download(repo_id=model_folder)
 labels_file = args.tags_csv
+if not Path(labels_file).is_file():
+    candidate = Path(model_folder) / labels_file
+    if candidate.is_file():
+        labels_file = str(candidate)
 threshold = args.threshold
 batch_size = args.batch_size
 
