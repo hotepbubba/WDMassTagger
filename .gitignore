@@ -10,6 +10,7 @@ build/
 
 # Virtual environment directories
 venv/
+.venv/
 env/
 ENV/
 .pip/
