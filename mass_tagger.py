@@ -28,12 +28,11 @@ if gpus:
         print(e)
 
 
-@tf.function
-def pred_model(x):
-    return model(x, training=False)
+def process_images(filepaths, images, model, tags_df, threshold):
+    @tf.function
+    def pred_model(x):
+        return model(x, training=False)
 
-
-def process_images(filepaths, images):
     preds = pred_model(images).numpy()
 
     for image_path, pred in zip(filepaths, preds):
@@ -56,6 +55,90 @@ def dataset_diagnostic(filepaths, images):
         lines.append(f"{image_path}\n")
     with open("dry_run_read.txt", "a") as f:
         f.writelines(lines)
+
+
+def tag_images(
+    targets_path,
+    recursive=False,
+    dry_run=False,
+    model_folder="networks/wd-v1-4-moat-tagger-v2",
+    tags_csv="selected_tags.csv",
+    threshold=0.35,
+    batch_size=32,
+):
+    """Tag all images in a directory using a WD14 tagger model."""
+
+    glob_pattern = "**/*" if recursive else "*"
+
+    if not Path(model_folder).exists():
+        print(f"Downloading model '{model_folder}' from Hugging Face...")
+        model_folder = snapshot_download(repo_id=model_folder)
+
+    labels_file = tags_csv
+    if not Path(labels_file).is_file():
+        candidate = Path(model_folder) / labels_file
+        if candidate.is_file():
+            labels_file = str(candidate)
+
+    image_extensions = [".jpeg", ".jpg", ".png", ".webp"]
+
+    images_list = [
+        str(p.resolve())
+        for p in Path(targets_path).glob(glob_pattern)
+        if p.suffix.lower() in image_extensions
+    ]
+
+    # https://github.com/toriato/stable-diffusion-webui-wd14-tagger/blob/a9eacb1eff904552d3012babfa28b57e1d3e295c/tagger/ui.py#L368
+    kaomojis = [
+        "0_0",
+        "(o)_(o)",
+        "+_+",
+        "+_-",
+        "._.",
+        "<o>_<o>",
+        "<|>_<|>",
+        "=_=",
+        ">_<",
+        "3_3",
+        "6_9",
+        ">_o",
+        "@_@",
+        "^_^",
+        "o_o",
+        "u_u",
+        "x_x",
+        "|_|",
+        "||_||",
+    ]
+
+    tags_df = pd.read_csv(labels_file)
+    tags_df["sanitized_name"] = tags_df["name"].map(
+        lambda x: x.replace("_", " ") if x not in kaomojis else x
+    )
+
+    if not dry_run:
+        model = tf.keras.models.load_model(model_folder)
+        _, height, width, _ = model.inputs[0].shape
+        process_func = lambda paths, imgs: process_images(paths, imgs, model, tags_df, threshold)
+    else:
+        height, width = 224, 224
+        process_func = dataset_diagnostic
+
+        scheduled = [f"{image_path}\n" for image_path in images_list]
+
+        # Truncate the file from previous runs
+        open("dry_run_read.txt", "w").close()
+        with open("dry_run_scheduled.txt", "w") as f:
+            f.writelines(scheduled)
+
+    generator = DataGenerator(
+        file_list=images_list, target_size=height, batch_size=batch_size
+    ).genDS()
+
+    for filepaths, images in tqdm(generator):
+        process_func(filepaths, images)
+
+    return f"Processed {len(images_list)} images"
 
 
 parser = argparse.ArgumentParser(description="Mass tag a set of images")
@@ -96,79 +179,13 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-targets_path = args.targets_path
-glob_pattern = "**/*" if args.recursive else "*"
-dry_run = args.dry_run
-
-model_folder = args.model_folder
-if not Path(model_folder).exists():
-    print(f"Downloading model '{model_folder}' from Hugging Face...")
-    model_folder = snapshot_download(repo_id=model_folder)
-labels_file = args.tags_csv
-if not Path(labels_file).is_file():
-    candidate = Path(model_folder) / labels_file
-    if candidate.is_file():
-        labels_file = str(candidate)
-threshold = args.threshold
-batch_size = args.batch_size
-
-image_extensions = [".jpeg", ".jpg", ".png", ".webp"]
-
-# https://github.com/toriato/stable-diffusion-webui-wd14-tagger/blob/a9eacb1eff904552d3012babfa28b57e1d3e295c/tagger/ui.py#L368
-kaomojis = [
-    "0_0",
-    "(o)_(o)",
-    "+_+",
-    "+_-",
-    "._.",
-    "<o>_<o>",
-    "<|>_<|>",
-    "=_=",
-    ">_<",
-    "3_3",
-    "6_9",
-    ">_o",
-    "@_@",
-    "^_^",
-    "o_o",
-    "u_u",
-    "x_x",
-    "|_|",
-    "||_||",
-]
-
-tags_df = pd.read_csv(labels_file)
-tags_df["sanitized_name"] = tags_df["name"].map(
-    lambda x: x.replace("_", " ") if x not in kaomojis else x
-)
-
-images_list = list(
-    (
-        str(p.resolve())
-        for p in Path(targets_path).glob(glob_pattern)
-        if p.suffix.lower() in image_extensions
+if __name__ == "__main__":
+    tag_images(
+        targets_path=args.targets_path,
+        recursive=args.recursive,
+        dry_run=args.dry_run,
+        model_folder=args.model_folder,
+        tags_csv=args.tags_csv,
+        threshold=args.threshold,
+        batch_size=args.batch_size,
     )
-)
-
-if not dry_run:
-    model = tf.keras.models.load_model(model_folder)
-    _, height, width, _ = model.inputs[0].shape
-    process_func = process_images
-else:
-    height, width = 224, 224
-    process_func = dataset_diagnostic
-
-    scheduled = [f"{image_path}\n" for image_path in images_list]
-
-    # Truncate the file from previous runs
-    open("dry_run_read.txt", "w").close()
-    with open("dry_run_scheduled.txt", "w") as f:
-        f.writelines(scheduled)
-
-
-generator = DataGenerator(
-    file_list=images_list, target_size=height, batch_size=batch_size
-).genDS()
-
-for filepaths, images in tqdm(generator):
-    process_func(filepaths, images)
