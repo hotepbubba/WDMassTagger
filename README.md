@@ -15,7 +15,7 @@ python3 -m pip install -r requirements.txt
 Run the tagger on a directory of images:
 
 ```bash
-python3 mass_tagger.py --targets-path /path/to/images [--recursive] [--dry-run] [--model-folder MODEL] [--tags-csv FILE] [--threshold FLOAT] [--batch-size INT]
+python3 mass_tagger.py --targets-path /path/to/images [--recursive] [--dry-run] [--model-folder MODEL] [--tags-csv FILE] [--threshold FLOAT] [--batch-size INT] [--gpu-id INT]
 ```
 
 - `--targets-path` (required): image file or folder containing images to tag.
@@ -25,6 +25,7 @@ python3 mass_tagger.py --targets-path /path/to/images [--recursive] [--dry-run] 
 - `--tags-csv`: CSV file with labels (default `selected_tags.csv`).
 - `--threshold`: prediction threshold (default `0.35`).
 - `--batch-size`: batch size for inference (default `32`).
+- `--gpu-id`: GPU index to run the model on (default `0`).
 
 The script writes a `.txt` file next to each image containing the predicted tags.
 
