@@ -177,9 +177,9 @@ parser.add_argument(
     type=int,
     help="Batch size",
 )
-args = parser.parse_args()
 
-if __name__ == "__main__":
+def main():
+    args = parser.parse_args()
     tag_images(
         targets_path=args.targets_path,
         recursive=args.recursive,
@@ -188,57 +188,9 @@ if __name__ == "__main__":
         tags_csv=args.tags_csv,
         threshold=args.threshold,
         batch_size=args.batch_size,
-
-targets_path = args.targets_path
-glob_pattern = "**/*" if args.recursive else "*"
-dry_run = args.dry_run
-
-model_folder = args.model_folder
-if not Path(model_folder).exists():
-    print(f"Downloading model '{model_folder}' from Hugging Face...")
-    model_folder = snapshot_download(repo_id=model_folder)
-labels_file = args.tags_csv
-if not Path(labels_file).is_file():
-    candidate = Path(model_folder) / labels_file
-    if candidate.is_file():
-        labels_file = str(candidate)
-threshold = args.threshold
-batch_size = args.batch_size
-
-image_extensions = [".jpeg", ".jpg", ".png", ".webp"]
-
-# https://github.com/toriato/stable-diffusion-webui-wd14-tagger/blob/a9eacb1eff904552d3012babfa28b57e1d3e295c/tagger/ui.py#L368
-kaomojis = [
-    "0_0",
-    "(o)_(o)",
-    "+_+",
-    "+_-",
-    "._.",
-    "<o>_<o>",
-    "<|>_<|>",
-    "=_=",
-    ">_<",
-    "3_3",
-    "6_9",
-    ">_o",
-    "@_@",
-    "^_^",
-    "o_o",
-    "u_u",
-    "x_x",
-    "|_|",
-    "||_||",
-]
-
-tags_df = pd.read_csv(labels_file)
-tags_df["sanitized_name"] = tags_df["name"].map(
-    lambda x: x.replace("_", " ") if x not in kaomojis else x
-)
-
-images_list = list(
-    (
-        str(p.resolve())
-        for p in Path(targets_path).glob(glob_pattern)
-        if p.suffix.lower() in image_extensions
- main
     )
+
+
+if __name__ == "__main__":
+    main()
+
