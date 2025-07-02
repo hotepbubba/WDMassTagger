@@ -5,3 +5,4 @@ tensorflow < 2.11
 tensorflow-io ~= 0.27.0
 huggingface-hub
 gradio
+
