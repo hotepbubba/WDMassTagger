@@ -70,6 +70,8 @@ def tag_images(
 
     glob_pattern = "**/*" if recursive else "*"
 
+    targets_path = Path(targets_path)
+
     if not Path(model_folder).exists():
         print(f"Downloading model '{model_folder}' from Hugging Face...")
         model_folder = snapshot_download(repo_id=model_folder)
@@ -82,11 +84,18 @@ def tag_images(
 
     image_extensions = [".jpeg", ".jpg", ".png", ".webp"]
 
-    images_list = [
-        str(p.resolve())
-        for p in Path(targets_path).glob(glob_pattern)
-        if p.suffix.lower() in image_extensions
-    ]
+    if targets_path.is_file():
+        images_list = (
+            [str(targets_path.resolve())]
+            if targets_path.suffix.lower() in image_extensions
+            else []
+        )
+    else:
+        images_list = [
+            str(p.resolve())
+            for p in targets_path.glob(glob_pattern)
+            if p.suffix.lower() in image_extensions
+        ]
 
     # https://github.com/toriato/stable-diffusion-webui-wd14-tagger/blob/a9eacb1eff904552d3012babfa28b57e1d3e295c/tagger/ui.py#L368
     kaomojis = [
@@ -147,7 +156,7 @@ parser = argparse.ArgumentParser(description="Mass tag a set of images")
 parser.add_argument(
     "--targets-path",
     required=True,
-    help="Folder with the images to tag",
+    help="Image file or folder with the images to tag",
 )
 parser.add_argument(
     "--recursive",

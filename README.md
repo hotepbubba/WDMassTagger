@@ -18,7 +18,7 @@ Run the tagger on a directory of images:
 python3 mass_tagger.py --targets-path /path/to/images [--recursive] [--dry-run] [--model-folder MODEL] [--tags-csv FILE] [--threshold FLOAT] [--batch-size INT]
 ```
 
-- `--targets-path` (required): folder containing images to tag.
+- `--targets-path` (required): image file or folder containing images to tag.
 - `--recursive`: search directories recursively.
 - `--dry-run`: load images without running predictions.
 - `--model-folder`: path or HuggingFace repo of the tagger model (default `networks/wd-v1-4-moat-tagger-v2`).
