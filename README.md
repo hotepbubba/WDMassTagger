@@ -37,4 +37,10 @@ Launch the Gradio web UI with:
 python3 gradio_app.py [--share]
 ```
 
+
 Use the optional `--share` flag (or set the `SHARE=1` environment variable) to create a public link. This starts a local server where you can configure the options interactively and run the tagger through a browser interface.
+
+This starts a local server where you can configure the options interactively and run the tagger through a browser interface.
+
+In the *Batch Tag* tab, use the **Images** file uploader to select the pictures you want to tag. The selected files are processed on the server and the resulting tags are written next to each uploaded image.
+
