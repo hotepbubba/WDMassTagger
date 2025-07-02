@@ -73,6 +73,7 @@ def _load_tags(labels_file):
     _tags_cache[labels_file] = df
     return df
 
+
 from Generator.TFDataReader import DataGenerator
 
 # Stop TF from hogging all of the VRAM
@@ -274,6 +275,7 @@ parser.add_argument(
     help="GPU index to use for TensorFlow operations",
 )
 
+
 def main():
     args = parser.parse_args()
     tag_images(
@@ -290,4 +292,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

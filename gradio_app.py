@@ -87,13 +87,23 @@ def main():
                     value=default_model,
                 )
                 tags_csv = gr.Textbox(label="Tags CSV", value="selected_tags.csv")
-                threshold = gr.Slider(minimum=0.0, maximum=1.0, value=0.35, label="Threshold")
+                threshold = gr.Slider(
+                    minimum=0.0, maximum=1.0, value=0.35, label="Threshold"
+                )
                 batch_size = gr.Number(value=32, label="Batch Size", precision=0)
                 out = gr.Textbox(label="Status")
                 run_button = gr.Button("Run")
                 run_button.click(
                     run,
-                    [targets, recursive, dry_run, model_folder, tags_csv, threshold, batch_size],
+                    [
+                        targets,
+                        recursive,
+                        dry_run,
+                        model_folder,
+                        tags_csv,
+                        threshold,
+                        batch_size,
+                    ],
                     out,
                 )
 
@@ -105,7 +115,9 @@ def main():
                     value=default_model,
                 )
                 tags_csv_s = gr.Textbox(label="Tags CSV", value="selected_tags.csv")
-                threshold_s = gr.Slider(minimum=0.0, maximum=1.0, value=0.35, label="Threshold")
+                threshold_s = gr.Slider(
+                    minimum=0.0, maximum=1.0, value=0.35, label="Threshold"
+                )
                 out_s = gr.Textbox(label="Tags")
                 run_button_s = gr.Button("Run")
                 run_button_s.click(
