@@ -4,10 +4,11 @@ This repository provides scripts for tagging batches of images using Waifu Diffu
 
 ## Installation
 
-Install the Python dependencies with pip:
+Run the setup script to create a virtual environment and install the required
+packages:
 
 ```bash
-python3 -m pip install -r requirements.txt
+./install.sh
 ```
 
 ## Command Line Usage
@@ -45,4 +46,14 @@ This starts a local server where you can configure the options interactively and
 Passing `--share` or setting the environment variable `GRADIO_SHARE=1` will share the interface publicly via Gradio.
 
 In the *Batch Tag* tab, use the **Images** file uploader to select the pictures you want to tag. The selected files are processed on the server and the resulting tags are written next to each uploaded image.
+
+## Launch
+
+Use the helper script to start the Gradio interface from the virtual environment:
+
+```bash
+./launch.sh [--share]
+```
+
+Any arguments passed to `launch.sh` are forwarded to `gradio_app.py`.
 
