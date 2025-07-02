@@ -5,18 +5,20 @@ import gradio as gr
 from mass_tagger import tag_images, _load_model
 
 
-def run(
-    targets_path,
-    recursive,
-    dry_run,
-    model_folder,
-    tags_csv,
-    threshold,
-    batch_size,
-):
+def run(files, recursive, dry_run, model_folder, tags_csv, threshold, batch_size):
+    file_paths = []
+    if isinstance(files, list):
+        for f in files:
+            file_paths.append(f if isinstance(f, str) else f.name)
+    elif files is not None:
+        file_paths.append(files if isinstance(files, str) else files.name)
+
+    if not file_paths:
+        return "No files provided"
+
     with gr.Progress(track_tqdm=True) as progress:
         return tag_images(
-            targets_path=targets_path,
+            targets_path=file_paths,
             recursive=recursive,
             dry_run=dry_run,
             model_folder=model_folder,
@@ -46,12 +48,11 @@ def run_single(upload, model_folder, tags_csv, threshold):
         )
 
     tags_file = os.path.splitext(image_path)[0] + ".txt"
+    tags = ""
     if os.path.isfile(tags_file):
         with open(tags_file) as f:
             tags = f.read()
         os.remove(tags_file)
-    else:
-        tags = ""
 
     if os.path.exists(image_path):
         os.remove(image_path)
@@ -74,15 +75,15 @@ def main():
         "SmilingWolf/wd-v1-4-vit-tagger",
     ]
 
-    # Preload the default model so the first request is responsive
     default_model = "SmilingWolf/wd-v1-4-moat-tagger-v2"
     _load_model(default_model)
 
     with gr.Blocks() as demo:
         gr.Markdown("# WD Mass Tagger")
+
         with gr.Tabs():
             with gr.TabItem("Batch Tag"):
-                targets = gr.Textbox(label="Targets Path")
+                targets = gr.Files(label="Images")
                 recursive = gr.Checkbox(label="Recursive")
                 dry_run = gr.Checkbox(label="Dry Run")
                 model_folder = gr.Dropdown(
@@ -131,6 +132,7 @@ def main():
                     out_s,
                     show_progress="full",
                 )
+
     demo.queue()
     demo.launch(share=True)
 

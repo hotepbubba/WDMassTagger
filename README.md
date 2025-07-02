@@ -38,3 +38,5 @@ python3 gradio_app.py
 ```
 
 This starts a local server where you can configure the options interactively and run the tagger through a browser interface.
+
+In the *Batch Tag* tab, use the **Images** file uploader to select the pictures you want to tag. The selected files are processed on the server and the resulting tags are written next to each uploaded image.
