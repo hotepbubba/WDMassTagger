@@ -109,7 +109,7 @@ class DataGenerator:
         )
 
         images_list = images_data.batch(
-            self.batch_size, drop_remainder=False, num_parallel_calls=tf.data.AUTOTUNE
+            self.batch_size, drop_remainder=False
         )
         images_list = images_list.prefetch(tf.data.AUTOTUNE)
         return images_list
