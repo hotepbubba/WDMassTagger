@@ -30,9 +30,23 @@ def main():
         targets = gr.Textbox(label="Targets Path")
         recursive = gr.Checkbox(label="Recursive")
         dry_run = gr.Checkbox(label="Dry Run")
-        model_folder = gr.Textbox(
+        model_folder = gr.Dropdown(
             label="Model Folder or HuggingFace repo",
-            value="networks/wd-v1-4-moat-tagger-v2",
+            choices=[
+                "SmilingWolf/wd-eva02-large-tagger-v3",
+                "SmilingWolf/wd-vit-large-tagger-v3",
+                "SmilingWolf/wd-v1-4-swinv2-tagger-v2",
+                "SmilingWolf/wd-vit-tagger-v3",
+                "SmilingWolf/wd-swinv2-tagger-v3",
+                "SmilingWolf/wd-convnext-tagger-v3",
+                "SmilingWolf/wd-v1-4-moat-tagger-v2",
+                "SmilingWolf/wd-v1-4-convnext-tagger-v2",
+                "SmilingWolf/wd-v1-4-vit-tagger-v2",
+                "SmilingWolf/wd-v1-4-convnextv2-tagger-v2",
+                "SmilingWolf/wd-v1-4-convnext-tagger",
+                "SmilingWolf/wd-v1-4-vit-tagger",
+            ],
+            value="SmilingWolf/wd-v1-4-moat-tagger-v2",
         )
         tags_csv = gr.Textbox(label="Tags CSV", value="selected_tags.csv")
         threshold = gr.Slider(
